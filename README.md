@@ -59,118 +59,83 @@ O conceito central do Airflow é o **DAG (Directed Acyclic Graph)**, ou Grafo Ac
 
 Neste laboratório, vamos instalar o Airflow e criar um DAG simples.
 
-### Parte 2: Instalação e Configuração no Ubuntu 24.04
+### Parte 2: Inicializando o Airflow
+Usar Docker é uma das maneiras mais eficientes e limpas de começar a aprender Airflow, pois encapsula toda a complexidade da instalação.
 
-Vamos preparar seu ambiente e instalar o Airflow.
+Para aprendizado, a melhor imagem Docker do Airflow é, sem dúvida, a **imagem oficial do Apache Airflow (`apache/airflow`)**. O motivo principal é que a equipe do Airflow fornece um arquivo `docker-compose.yaml` pronto que facilita enormemente a inicialização de um ambiente completo e funcional.
 
-#### Passo 1: Iniciar e Atualizar o Ubuntu 24.04
+Aqui está o processo para colocar o ambiente de aprendizado no ar usando a imagem oficial.
 
-1.  Atualize os pacotes do seu sistema para garantir que tudo esteja em dia:
+**Pré-requisito:** Ter o [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e rodando em seu sistema (ele já se integra perfeitamente com o WSL2 no Windows).
 
-    ```bash
-    sudo apt update && sudo apt upgrade -y
+#### **Passo 1: Crie uma Pasta para seu Projeto**
+Crie uma pasta onde seus arquivos de configuração e DAGs ficarão.
 
-    ```
+```bash
+mkdir airflow-lab
 
-#### Passo 2: Instalar Pré-requisitos (Python)
+```
 
-O Ubuntu 24.04 já vem com o Python 3.12, que é perfeito para o Airflow. Precisamos apenas garantir que o `pip` e o `python3-venv` (para ambientes virtuais) estejam instalados.
+```bash
+cd airflow-lab
 
-1.  Instale os pacotes necessários:
+```
 
-    ```bash
-    sudo apt install python3-pip python3-venv -y
+#### **Passo 2: Baixe o Arquivo `docker-compose.yaml`**
+Este é o arquivo que descreve todos os serviços que o Docker irá criar. Você pode baixá-lo diretamente do site do Airflow com o seguinte comando:
 
-    ```
+```bash
+curl -LfO 'https://airflow.apache.org/docs/apache-airflow/3.1.0/docker-compose.yaml'
 
-2.  Verifique a versão do Python:
+```
 
-    ```bash
-    python3 --version
+*(Verifique no [site oficial do Airflow](https://airflow.apache.org/docs/apache-airflow/stable/start/docker.html) a versão mais recente se necessário.)*
 
-    ```
+#### **Passo 3: Prepare o Ambiente**
+O arquivo `docker-compose.yaml` precisa de algumas pastas e de um arquivo `.env` para funcionar corretamente.
 
-    Você deve ver algo como `Python 3.12.3`.
-
-#### Passo 3: Criar um Ambiente Virtual e Instalar o Airflow
-
-É uma boa prática instalar pacotes Python em um ambiente virtual para evitar conflitos com pacotes do sistema.
-
-1.  Crie um diretório para o seu projeto e navegue até ele:
+1.  Crie as pastas necessárias:
 
     ```bash
-    mkdir airflow-lab
+    mkdir -p ./dags ./logs ./plugins ./config
 
     ```
+
+2.  Crie um arquivo `.env` para definir o UID (User ID) do Airflow, evitando problemas de permissão de arquivos:
 
     ```bash
-    cd airflow-lab
+    echo -e "AIRFLOW_UID=$(id -u)" > .env
 
     ```
 
-2.  Crie um ambiente virtual:
+#### **Passo 4: Suba o Ambiente Airflow**
+Agora, com um único comando, o Docker Compose irá baixar as imagens e iniciar todos os contêineres.
+
+1.  Inicialize o banco de dados e crie o usuário admin padrão (`airflow`/`airflow`):
 
     ```bash
-    python3 -m venv venv
+    docker compose up airflow-init
 
     ```
 
-3.  Ative o ambiente virtual. Você precisará fazer isso toda vez que for trabalhar com o Airflow neste terminal.
+2.  Após a conclusão do `airflow-init`, suba todo o ambiente em modo "detached" (-d), para que ele continue rodando em segundo plano:
 
     ```bash
-    source venv/bin/activate
+    docker compose up -d
 
     ```
 
-    Seu prompt de comando mudará, mostrando `(venv)` no início.
+#### **Passo 5: Acesse o Airflow**
+Pronto\! O ambiente está no ar.
 
-4.  Instale o Apache Airflow. Usaremos um arquivo de "constraints" para garantir que todas as dependências sejam compatíveis, o que é a maneira recomendada de instalar.
+  * Abra seu navegador e acesse: [**http://localhost:8080**](https://www.google.com/search?q=http://localhost:8080)
+  * Use o login e senha padrão: `airflow` / `airflow`
 
-    ```bash
-    pip install "apache-airflow[postgres,cncf.kubernetes]==2.9.2" --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.9.2/constraints-3.12.txt"
+Agora você tem um ambiente Airflow completo e funcional. Qualquer arquivo `.py` que você colocar na pasta `dags` que você criou localmente aparecerá automaticamente na interface do Airflow.
 
-    ```
+---
 
-    *Nota: Substitua `3.12` pela sua versão do Python se for diferente.*
-
-### Parte 3: Primeiros Passos com o Airflow
-
-Com o Airflow instalado, a maneira mais fácil de começar um ambiente de desenvolvimento local é usando o comando `standalone`. Ele configura um banco de dados SQLite, cria um usuário para você e inicia todos os componentes necessários (servidor web e scheduler).
-
-#### Passo 1: Iniciar o Ambiente Airflow
-
-1.  No mesmo terminal com o ambiente virtual ativado, execute o seguinte comando:
-
-    ```bash
-    airflow standalone
-
-    ```
-
-2.  O Airflow começará a inicializar. Este processo pode levar alguns minutos na primeira vez. Ele irá:
-
-      * Criar um diretório `~/airflow` para armazenar suas configurações e DAGs.
-      * Inicializar o banco de dados.
-      * Criar uma conta de administrador.
-      * Iniciar o servidor web e o scheduler.
-
-3.  Ao final do processo, você verá uma saída com o nome de usuário e a senha do administrador. **Guarde essa senha\!** Será algo como:
-
-    ```
-    Admin user created:
-    Username: admin
-    Password: <senha_gerada_aleatoriamente>
-    ```
-
-#### Passo 2: Acessar a Interface de Usuário (UI)
-
-1.  Abra seu navegador no Windows e acesse:
-    [**http://localhost:8080**](https://www.google.com/search?q=http://localhost:8080)
-
-2.  Faça login com o usuário `admin` e a senha que você salvou no passo anterior.
-
-3.  Explore a interface\! Você verá uma lista de DAGs de exemplo que vêm com o Airflow. Eles são ótimos para aprender, mas por enquanto, vamos criar o nosso.
-
-### Parte 4: Criando seu Primeiro Pipeline de Dados (DAG)
+### Parte 3: Criando seu Primeiro Pipeline de Dados (DAG)
 
 Nosso pipeline será simples:
 
@@ -257,7 +222,7 @@ Nosso pipeline será simples:
 
 ### Conclusão
 
-Parabéns\! Você instalou o Apache Airflow em seu ambiente WSL2, iniciou os serviços, explorou a interface e criou, executou e monitorou seu primeiro pipeline de dados.
+Parabéns\! Você ininializou o Apache Airflow em seu ambiente Linux, explorou a interface e criou, executou e monitorou seu primeiro pipeline de dados.
 
 **Próximos Passos Sugeridos:**
 
@@ -265,5 +230,3 @@ Parabéns\! Você instalou o Apache Airflow em seu ambiente WSL2, iniciou os ser
   * Aprenda sobre como passar dados entre tarefas usando **XComs**.
   * Configure um agendamento (`schedule`) para seu DAG em vez de executá-lo manualmente.
   * Tente criar um pipeline um pouco mais complexo, como baixar um arquivo da internet e depois processar seu conteúdo.
-
-Este laboratório fornece a base sólida que você precisa para começar a construir pipelines de dados mais robustos e complexos com o Apache Airflow.
