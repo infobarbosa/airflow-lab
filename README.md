@@ -59,7 +59,7 @@ O conceito central do Airflow é o **DAG (Directed Acyclic Graph)**, ou Grafo Ac
 
 Neste laboratório, vamos instalar o Airflow e criar um DAG simples.
 
-### Parte 2: Inicializando o Airflow
+## Parte 2: Inicializando o Airflow
 Usar Docker é uma das maneiras mais eficientes e limpas de começar a aprender Airflow, pois encapsula toda a complexidade da instalação.
 
 Para aprendizado, a melhor imagem Docker do Airflow é, sem dúvida, a **imagem oficial do Apache Airflow (`apache/airflow`)**. O motivo principal é que a equipe do Airflow fornece um arquivo `docker-compose.yaml` pronto que facilita enormemente a inicialização de um ambiente completo e funcional.
@@ -135,7 +135,7 @@ Agora você tem um ambiente Airflow completo e funcional. Qualquer arquivo `.py`
 
 ---
 
-### Parte 3: Criando seu Primeiro Pipeline de Dados (DAG)
+## Parte 3: Criando seu Primeiro Pipeline de Dados (DAG)
 
 Nosso pipeline será simples:
 
