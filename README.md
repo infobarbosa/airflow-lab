@@ -296,6 +296,8 @@ services:
   spark-worker:
     image: apache/spark:4.1.1-java21-python3
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    ports:
+      - "8081:8081"
     depends_on:
       - spark-master
 
@@ -636,6 +638,8 @@ O **Master** é o nó coordenador do cluster Spark no modo Standalone. Ele:
 spark-worker:
   image: apache/spark:4.1.1-java21-python3
   command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+  ports:
+    - "8081:8081"
   depends_on:
     - spark-master
 ```
@@ -646,6 +650,7 @@ O **Worker** é o nó executor do cluster. Ele:
 - Executa as transformações Spark e retorna os resultados.
 
 - `command` — inicia a classe Java do Worker passando o endereço do Master como argumento (`spark://spark-master:7077`). O hostname `spark-master` é resolvido pelo DNS interno do Docker Compose.
+- `ports: "8081:8081"` — publica a UI web do Worker no host. A porta 8081 é o padrão do Spark Worker. Acesse em `http://localhost:9090` a partir do link presente na UI do Master, ou diretamente em `http://localhost:8081`.
 - `depends_on: spark-master` — o Worker precisa que o Master esteja rodando antes de tentar se registrar.
 
 > Para escalar horizontalmente, adicione mais replicas do Worker com `docker compose up --scale spark-worker=3`.
