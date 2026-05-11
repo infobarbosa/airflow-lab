@@ -10,7 +10,7 @@ O objetivo deste laboratório é estudar o Apache Airflow e o Apache Spark.
 | Componente | Versão |
 |---|---|
 | Apache Airflow | 3.2.1 |
-| Python | 3.12 |
+| Python | 3.10 |
 | Apache Spark | 4.1.1 |
 | PySpark | 4.1.1 |
 | PostgreSQL | 17 |
@@ -28,10 +28,10 @@ Recomendo a execução em Linux. Caso não tenha um à disposição, utilize o s
 O `Dockerfile` descreve como construir uma **imagem Docker customizada** para o Airflow. Precisamos customizá-la porque a imagem oficial do Airflow não vem com Java nem com PySpark, que são necessários para se comunicar com o cluster Spark.
 
 ```dockerfile
-FROM apache/airflow:3.2.1-python3.12
+FROM apache/airflow:3.2.1-python3.10
 ```
 
-**`FROM`** define a imagem base — o ponto de partida da nossa imagem. Estamos usando a imagem oficial do Apache Airflow na versão `3.2.1` com Python `3.12`. Tudo que já está nessa imagem (o próprio Airflow, suas dependências, o sistema Debian Bookworm) é herdado automaticamente. Só precisamos acrescentar o que falta.
+**`FROM`** define a imagem base — o ponto de partida da nossa imagem. Estamos usando a imagem oficial do Apache Airflow na versão `3.2.1` com Python `3.10`. Tudo que já está nessa imagem (o próprio Airflow, suas dependências, o sistema Debian Bookworm) é herdado automaticamente. Só precisamos acrescentar o que falta.
 
 ```dockerfile
 USER root
@@ -81,7 +81,7 @@ RUN pip install --no-cache-dir \
     apache-airflow-providers-apache-spark==6.0.1 \
     apache-airflow-providers-standard \
     pyspark==4.1.1 \
-    --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-3.2.1/constraints-3.12.txt"
+    --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-3.2.1/constraints-3.10.txt"
 ```
 
 Instalamos três pacotes Python:
@@ -92,7 +92,7 @@ Instalamos três pacotes Python:
 
 O flag `--no-cache-dir` evita que o pip guarde cache de pacotes, mantendo a imagem menor.
 
-O `--constraint` aponta para o arquivo de restrições de versão mantido pelo próprio projeto Airflow. Esse arquivo especifica as versões exatas de cada dependência que foram testadas e aprovadas para funcionar juntas com o Airflow 3.2.1 + Python 3.12. Sem ele, o pip poderia instalar uma versão nova de alguma dependência que quebrasse o Airflow.
+O `--constraint` aponta para o arquivo de restrições de versão mantido pelo próprio projeto Airflow. Esse arquivo especifica as versões exatas de cada dependência que foram testadas e aprovadas para funcionar juntas com o Airflow 3.2.1 + Python 3.10. Sem ele, o pip poderia instalar uma versão nova de alguma dependência que quebrasse o Airflow.
 
 ---
 
@@ -722,7 +722,7 @@ docker rmi apache/spark:4.1.1-java21-python3
 ```
 
 ```bash
-docker rmi apache/airflow:3.2.1-python3.12
+docker rmi apache/airflow:3.2.1-python3.10
 ```
 
 ```bash
