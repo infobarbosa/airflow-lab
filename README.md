@@ -553,14 +553,40 @@ Faça login com usuário `admin` e senha `admin`.
 
 ### 5.A. Configure a conexão com o Spark
 
-- Vá em **Admin → Connections**
-- Clique em `+` para adicionar
-- **Connection Id**: `spark_default`
-- **Connection Type**: `Spark`
-- **Host**: `spark://spark-master`
-- **Port**: `7077`
+O Airflow precisa saber como se comunicar com o cluster Spark. Essa configuração fica armazenada no banco de metadados e é consultada pelo `SparkSubmitOperator` em tempo de execução.
 
-### 5.B. Crie o DAG de teste
+- Vá em **Admin → Connections**
+- Clique em `+` para adicionar uma nova conexão
+- Preencha os campos:
+  - **Connection Id**: `spark_default`
+  - **Connection Type**: `Spark`
+  - **Host**: `spark://spark-master`
+  - **Port**: `7077`
+- Clique em **Save**
+
+> O **Connection Id** `spark_default` é o nome que usaremos no parâmetro `conn_id` do `SparkSubmitOperator`. O hostname `spark-master` é resolvido pelo DNS interno do Docker Compose.
+
+### 5.B. Crie o script PySpark
+
+Crie o diretório de scripts e o arquivo abaixo. Este é o job que o Airflow vai submeter ao cluster Spark.
+
+#### `dags/scripts/hello_spark.py`
+
+```python
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.appName("AirflowLab").getOrCreate()
+data = [("Marcelo", 45), ("Airflow", 10), ("Spark", 12)]
+df = spark.createDataFrame(data, ["Name", "Age"])
+df.show()
+spark.stop()
+```
+
+Este script cria uma `SparkSession`, monta um DataFrame simples com três linhas e o imprime. O resultado aparecerá nos logs da task no Airflow.
+
+### 5.C. Crie o DAG
+
+O DAG define o pipeline de orquestração: uma única task que usa o `SparkSubmitOperator` para submeter o script acima ao cluster.
 
 #### `dags/test_spark_dag.py`
 
@@ -584,17 +610,69 @@ with DAG(
     )
 ```
 
-#### `dags/scripts/hello_spark.py`
+Pontos importantes do DAG:
+- `schedule=None` — o DAG não tem agendamento automático; só executa quando disparado manualmente.
+- `catchup=False` — não tenta executar runs passadas retroativamente desde `start_date`.
+- `verbose=True` — faz o `SparkSubmitOperator` capturar e exibir toda a saída do `spark-submit` nos logs da task.
 
-```python
-from pyspark.sql import SparkSession
+### 5.D. Aguarde o DAG aparecer na UI
 
-spark = SparkSession.builder.appName("AirflowLab").getOrCreate()
-data = [("Marcelo", 45), ("Airflow", 10), ("Spark", 12)]
-df = spark.createDataFrame(data, ["Name", "Age"])
-df.show()
-spark.stop()
+Após salvar o arquivo `test_spark_dag.py`, o **DAG Processor** detecta a mudança em até 30 segundos e registra o DAG no banco de metadados. Recarregue a página inicial do Airflow.
+
+O DAG `teste_spark_orchestration` aparecerá na lista com o status **Paused** (toggle azul/cinza à esquerda do nome). Isso é esperado — lembre-se da variável `AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'` configurada no `compose.yaml`.
+
+> Se o DAG não aparecer após 1 minuto, verifique os logs do dag-processor:
+> ```bash
+> docker compose logs airflow-dag-processor
+> ```
+> Erros de sintaxe no arquivo Python serão exibidos aqui.
+
+### 5.E. Ative e dispare o DAG
+
+1. **Ative o DAG**: clique no toggle à esquerda do nome `teste_spark_orchestration` para mudar de **Paused** para **Active**.
+2. **Dispare manualmente**: clique no botão **▶ Trigger DAG** (ícone de play) à direita do nome.
+3. Confirme o disparo na janela de confirmação.
+
+Uma nova **DAG Run** será criada e aparecerá na coluna **Runs** com o status `running`.
+
+### 5.F. Acompanhe a execução
+
+Clique no nome do DAG para abrir a visualização de runs. Em seguida, clique na run em andamento para abrir o **Grid View**.
+
+Observe os estados da task `submit_pyspark_job` em sequência:
+
+| Estado | O que está acontecendo |
+|---|---|
+| `queued` | O Scheduler publicou a task na fila do Redis; aguardando um Worker livre |
+| `running` | O Worker consumiu a mensagem e está executando o `SparkSubmitOperator` |
+| `success` | O job Spark terminou com código 0 |
+| `failed` | Algo deu errado — verifique os logs (passo 5.G) |
+
+> A transição de `queued` para `running` pode levar alguns segundos enquanto o Worker inicializa o processo `spark-submit`.
+
+### 5.G. Inspecione os logs da task
+
+Com a task no estado `success` (ou `failed`), clique sobre o quadrado colorido da task `submit_pyspark_job` e depois em **Log**.
+
+Nos logs, procure a saída do DataFrame gerada pelo `df.show()`:
+
 ```
++-------+---+
+|   Name|Age|
++-------+---+
+|Marcelo| 45|
+| Airflow| 10|
+|  Spark| 12|
++-------+---+
+```
+
+A presença dessa tabela confirma que o job PySpark foi executado com sucesso pelo cluster Spark e o resultado foi capturado pelo Airflow.
+
+### 5.H. Verifique o cluster Spark
+
+Acesse a UI do Spark Master em `http://localhost:9090`.
+
+Na seção **Completed Applications**, você verá o job `AirflowLab` registrado com status `FINISHED`. Isso confirma que o `spark-submit` disparado pelo Worker do Airflow se conectou ao Master (`spark://spark-master:7077`), teve recursos alocados pelo cluster e executou o job nos Workers Spark.
 
 ---
 
