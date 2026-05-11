@@ -1,0 +1,8 @@
+.claude
+Dockerfile
+compose.yaml
+config
+dags
+logs
+plugins
+scripts
