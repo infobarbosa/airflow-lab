@@ -600,18 +600,59 @@ spark.stop()
 
 ## Parte 6 — Limpeza
 
-### Para e remove tudo
+### 6.1 Containers, redes e volumes nomeados
+
+Para todos os containers, remove as redes criadas pelo Compose e apaga o volume `postgres-db-volume` (dados do banco):
 
 ```bash
 docker compose down --volumes --remove-orphans
 ```
 
-### Remove as imagens customizadas (opcional)
+### 6.2 Arquivos de DAG criados no laboratório
 
 ```bash
-docker rmi airflow-lab-airflow-apiserver airflow-lab-airflow-scheduler \
-           airflow-lab-airflow-dag-processor airflow-lab-airflow-worker \
-           airflow-lab-airflow-triggerer airflow-lab-airflow-init
+rm -rf ./dags/test_spark_dag.py ./dags/scripts/
+```
+
+### 6.3 Diretórios locais criados no laboratório
+
+Remove os diretórios de logs, plugins e config montados como bind mount nos containers:
+
+```bash
+rm -rf ./logs ./plugins ./config ./dags
+```
+
+### 6.4 Imagens construídas (build local)
+
+Imagens geradas a partir do `Dockerfile` deste projeto:
+
+```bash
+docker rmi airflow-lab-airflow-apiserver \
+           airflow-lab-airflow-scheduler \
+           airflow-lab-airflow-dag-processor \
+           airflow-lab-airflow-worker \
+           airflow-lab-airflow-triggerer \
+           airflow-lab-airflow-init
+```
+
+### 6.5 Imagens baixadas do Docker Hub (opcional)
+
+> **Atenção:** execute este passo apenas se não utilizar essas imagens em outros projetos.
+
+```bash
+docker rmi apache/spark:4.1.1-java21-python3
+```
+
+```bash
+docker rmi apache/airflow:3.2.1-python3.12
+```
+
+```bash
+docker rmi postgres:17
+```
+
+```bash
+docker rmi redis:7.2-bookworm
 ```
 
 ---
