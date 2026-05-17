@@ -292,12 +292,16 @@ services:
     ports:
       - "7077:7077"
       - "9090:8080"
+    environment:
+      - SPARK_PUBLIC_DNS=localhost
 
   spark-worker:
     image: apache/spark:4.1.1-java21-python3
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
     ports:
       - "8081:8081"
+    environment:
+      - SPARK_PUBLIC_DNS=localhost
     depends_on:
       - spark-master
 
