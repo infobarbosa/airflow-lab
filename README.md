@@ -294,6 +294,7 @@ services:
       - "9090:8080"
     environment:
       - SPARK_PUBLIC_DNS=localhost
+      - SPARK_MASTER_OPTS="-Dspark.ui.reverseProxy=true"
 
   spark-worker:
     image: apache/spark:4.1.1-java21-python3
